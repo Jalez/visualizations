@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Graph Algorithms Visualizer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 270px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1;
+        }
+        #ui h2 {
+            margin-top: 0;
+        }
+        #ui button, #ui select {
+            width: 100%;
+            margin-bottom: 5px;
+            padding: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #ui label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #helpText {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+        #statusPanel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: calc(100% - 20px);
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px;
+            border-radius: 5px;
+            z-index: 1;
+        }
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            right: 320px; /* Adjusted to avoid overlap */
+            width: 270px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #333;
+            z-index: 1;
+        }
+        #algorithmCode {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            height: calc(100% - 20px);
+            background: rgba(245, 245, 245, 0.95);
+            padding: 10px;
+            overflow-y: auto;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #333;
+            z-index: 1;
+            display: none;
+        }
+        #algorithmCode pre {
+            margin: 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .code-line {
+            padding: 2px;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+        #modeDisplay {
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        .nav-buttons button {
+            width: 48%;
+            padding: 8px;
+        }
+        #selectionStatus {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Three.js Scene -->
+    <div id="scene-container"></div>
+
+    <!-- User Interface -->
+    <div id="ui">
+        <h2>Graph Algorithms Visualizer</h2>
+        <!-- Mode Display -->
+        <div id="modeDisplay">Mode: None</div>
+        <!-- Mode Selection -->
+        <select id="modeSelect" onchange="changeMode(this.value)">
+            <option value="none">Select Mode</option>
+            <option value="addNode">Add Node</option>
+            <option value="addEdge">Add Edge</option>
+            <option value="removeNode">Remove Node</option>
+            <option value="removeEdge">Remove Edge</option>
+            <option value="selectStartNode">Select Start Node</option>
+            <option value="selectEndNode">Select End Node</option>
+        </select>
+        <!-- Algorithm Selection -->
+        <select id="algorithmSelect">
+            <option value="bfs">Breadth-First Search (BFS)</option>
+            <option value="dfs">Depth-First Search (DFS)</option>
+            <option value="dijkstra">Dijkstra's Algorithm</option>
+            <option value="astar">A* Search Algorithm</option>
+        </select>
+        <!-- Action Buttons -->
+        <button onclick="startAlgorithm()">Start Algorithm</button>
+        <button onclick="generateRandomGraph()">Generate Random Graph</button>
+        <button onclick="generateGridGraph()">Generate Grid Graph</button>
+        <button onclick="resetTraversal()">Reset Traversal</button>
+        <button onclick="resetGraph()">Reset Graph</button>
+        <!-- Toggles -->
+        <label><input type="checkbox" id="toggleEdgeWeights" onchange="toggleEdgeWeights()"> Show Edge Weights</label>
+        <label><input type="checkbox" id="toggleGrid" onchange="toggleGridHelper()" checked> Show Grid</label>
+        <label><input type="checkbox" id="toggleCode" onchange="toggleAlgorithmCode()"> Show Algorithm Code</label>
+        <!-- Selection Status -->
+        <div id="selectionStatus">
+            <p>Start Node: <span id="startNodeDisplay">None</span></p>
+            <p>End Node: <span id="endNodeDisplay">None</span></p>
+        </div>
+        <!-- Help Text -->
+        <div id="helpText">Welcome! Select a mode to begin.</div>
+    </div>
+
+    <!-- Status Panel -->
+    <div id="statusPanel"></div>
+
+    <!-- Instructions -->
+    <div id="instructions">
+        <strong>Instructions:</strong>
+        <ul>
+            <li>Use arrow keys or buttons to navigate steps.</li>
+            <li>Left/Right: Previous/Next step.</li>
+            <li>Up/Down: Navigate code lines.</li>
+            <li>Space: Execute current code line.</li>
+            <li>Enter: Finish algorithm execution.</li>
+            <li>Press 'R' or Reset Traversal button to reset traversal.</li>
+        </ul>
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <button onclick="previousStep()">Previous Step</button>
+            <button onclick="nextStep()">Next Step</button>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="previousCodeLine()">Previous Line</button>
+            <button onclick="nextCodeLine()">Next Line</button>
+        </div>
+        <div class="nav-buttons">
+            <button onclick="executeCurrentCodeLine()">Execute Line</button>
+            <button onclick="finishAlgorithm()">Finish Algorithm</button>
+        </div>
+    </div>
+
+    <!-- Algorithm Code Panel -->
+    <div id="algorithmCode">
+        <h3>Algorithm Code</h3>
+        <pre id="codeContainer"></pre>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <!-- OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Application Script -->
+    <!-- Custom Script Files -->
+    <script src="utils.js"></script>
+    <script src="graph.js"></script>
+    <script src="algorithms.js"></script>
+    <script src="ui.js"></script>
+    <script src="graphGeneration.js"></script> 
+    <script src="main.js"></script> 
+</body>
+</html>
